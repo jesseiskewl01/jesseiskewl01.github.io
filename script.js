@@ -1,5 +1,5 @@
-const clientId = 'YOUR_SPOTIFY_CLIENT_ID';
-const redirectUri = 'https://yourusername.github.io/lyrics-displayer/';
+const clientId = 'cc68dd35236641bdbe8ab14888f6c883';
+const redirectUri = 'https://github.com/jesseiskewl01/jesseiskewl01.github.io';
 const scopes = 'user-read-playback-state user-read-currently-playing';
 
 document.getElementById('login-button').addEventListener('click', () => {
