@@ -23,24 +23,26 @@ window.addEventListener('load', () => {
     }
 });
 
-async function fetchLyrics(songName, artistName) {
-    const url = `https://api.lyrics.ovh/v1/${encodeURIComponent(artistName)}/${encodeURIComponent(songName)}`;
-    console.log('Fetching lyrics from:', url);
-    
+async function fetchLyricsFromMusixmatch(trackName, artistName) {
+    const apiKey = 'your_musixmatch_api_key';
+    const url = `https://api.musixmatch.com/ws/1.1/matcher.lyrics.get?format=json&apikey=${apiKey}&q_track=${encodeURIComponent(trackName)}&q_artist=${encodeURIComponent(artistName)}`;
+
     try {
         const response = await fetch(url);
         if (!response.ok) {
             throw new Error('Failed to fetch lyrics');
         }
         const data = await response.json();
-        console.log('API Response:', data);
-        displayLyrics(data.lyrics);
+        if (data.message.body.lyrics) {
+            displayLyrics(data.message.body.lyrics.lyrics_body);
+        } else {
+            throw new Error('Lyrics not found');
+        }
     } catch (error) {
         console.error('Error fetching lyrics:', error.message);
         displayLyrics('Lyrics not found');
     }
 }
-
 
     const response = await fetch('https://api.spotify.com/v1/me/player/currently-playing', {
         headers: {
