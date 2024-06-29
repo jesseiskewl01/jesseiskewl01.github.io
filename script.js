@@ -19,32 +19,27 @@ window.addEventListener('load', () => {
     if (hash.access_token) {
         localStorage.setItem('spotify_access_token', hash.access_token);
         window.location.hash = '';
-        fetchCurrentlyPlaying();
+        getCurrentlyPlaying();
     }
 });
 
-async function fetchCurrentlyPlaying() {
+async function getCurrentlyPlaying() {
     const token = localStorage.getItem('spotify_access_token');
     if (!token) {
-        console.error('No Spotify access token found');
         return;
     }
 
-    try {
-        const response = await fetch('https://api.spotify.com/v1/me/player/currently-playing', {
-            headers: {
-                'Authorization': `Bearer ${token}`
-            }
-        });
-
-        if (!response.ok) {
-            throw new Error(`Failed to fetch currently playing song: ${response.status} ${response.statusText}`);
+    const response = await fetch('https://api.spotify.com/v1/me/player/currently-playing', {
+        headers: {
+            'Authorization': `Bearer ${token}`
         }
+    });
 
+    if (response.ok) {
         const data = await response.json();
         displaySongInfo(data);
-    } catch (error) {
-        console.error('Error fetching currently playing song:', error.message);
+    } else {
+        console.error('Failed to fetch currently playing song');
     }
 }
 
@@ -61,40 +56,18 @@ function displaySongInfo(data) {
     }
 }
 
-async function fetchLyrics(songName, artistName) {
+async function fetchLyricsFromMusixmatch(trackName, artistName) {
+    const apiKey = 'your_musixmatch_api_key';
+    const url = `https://api.musixmatch.com/ws/1.1/matcher.lyrics.get?format=json&apikey=${apiKey}&q_track=${encodeURIComponent(trackName)}&q_artist=${encodeURIComponent(artistName)}`;
+
     try {
-        const accessToken = '_DUPNacCt418SU4LntMk9Mi-BmB6JrNQzEmLZbqj_NK6f421Lt79urnwwDm_FNO8';
-        const searchUrl = `https://api.genius.com/search?q=${encodeURIComponent(songName)} ${encodeURIComponent(artistName)}`;
-        
-        const searchResponse = await fetch(searchUrl, {
-            headers: {
-                'Authorization': `Bearer ${accessToken}`
-            }
-        });
-
-        if (!searchResponse.ok) {
-            throw new Error(`Failed to search for lyrics: ${searchResponse.status} ${searchResponse.statusText}`);
+        const response = await fetch(url);
+        if (!response.ok) {
+            throw new Error('Failed to fetch lyrics');
         }
-
-        const searchData = await searchResponse.json();
-        if (searchData.response.hits.length > 0) {
-            const songPath = searchData.response.hits[0].result.api_path;
-            const lyricsUrl = `https://api.genius.com${songPath}`;
-
-            const lyricsResponse = await fetch(lyricsUrl, {
-                headers: {
-                    'Authorization': `Bearer ${accessToken}`
-                }
-            });
-
-            if (!lyricsResponse.ok) {
-                throw new Error(`Failed to fetch lyrics: ${lyricsResponse.status} ${lyricsResponse.statusText}`);
-            }
-
-            const lyricsData = await lyricsResponse.json();
-            const lyrics = lyricsData.response.song.lyrics;
-
-            displayLyrics(lyrics);
+        const data = await response.json();
+        if (data.message.body.lyrics) {
+            displayLyrics(data.message.body.lyrics.lyrics_body);
         } else {
             throw new Error('Lyrics not found');
         }
@@ -108,7 +81,7 @@ function displayLyrics(lyrics) {
     const lyricsContainer = document.getElementById('lyrics-container');
     lyricsContainer.innerHTML = '';
 
-    if (lyrics && lyrics !== 'Lyrics not found') {
+    if (lyrics) {
         const lyricsLines = lyrics.split('\n');
         lyricsLines.forEach(line => {
             const p = document.createElement('p');
@@ -118,8 +91,51 @@ function displayLyrics(lyrics) {
 
         document.getElementById('lyrics').classList.remove('hidden');
 
-        // Implement your syncing logic here
+        syncLyrics(lyricsLines);
     } else {
         lyricsContainer.textContent = 'Lyrics not found';
     }
+}
+
+function syncLyrics(lyricsLines) {
+    const lyricsContainer = document.getElementById('lyrics-container');
+    let currentIndex = 0;
+
+    function updateLyrics() {
+        const token = localStorage.getItem('spotify_access_token');
+        if (!token) {
+            return;
+        }
+
+        fetch('https://api.spotify.com/v1/me/player', {
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data && data.item) {
+                const progressMs = data.progress_ms;
+                while (currentIndex < lyricsLines.length && getTimestamp(lyricsLines[currentIndex]) <= progressMs) {
+                    currentIndex++;
+                }
+
+                lyricsContainer.querySelectorAll('p').forEach((p, index) => {
+                    if (index === currentIndex) {
+                        p.classList.add('highlight');
+                    } else {
+                        p.classList.remove('highlight');
+                    }
+                });
+            }
+        });
+
+        setTimeout(updateLyrics, 1000);
+    }
+
+    updateLyrics();
+}
+
+function getTimestamp(lyricLine) {
+    return Infinity;
 }
