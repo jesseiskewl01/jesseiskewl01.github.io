@@ -19,42 +19,32 @@ window.addEventListener('load', () => {
     if (hash.access_token) {
         localStorage.setItem('spotify_access_token', hash.access_token);
         window.location.hash = '';
-        getCurrentlyPlaying();
+        fetchCurrentlyPlaying();
     }
 });
 
-async function fetchLyricsFromMusixmatch(trackName, artistName) {
-    const apiKey = 'your_musixmatch_api_key';
-    const url = `https://api.musixmatch.com/ws/1.1/matcher.lyrics.get?format=json&apikey=${apiKey}&q_track=${encodeURIComponent(trackName)}&q_artist=${encodeURIComponent(artistName)}`;
+async function fetchCurrentlyPlaying() {
+    const token = localStorage.getItem('spotify_access_token');
+    if (!token) {
+        console.error('No Spotify access token found');
+        return;
+    }
 
     try {
-        const response = await fetch(url);
-        if (!response.ok) {
-            throw new Error('Failed to fetch lyrics');
-        }
-        const data = await response.json();
-        if (data.message.body.lyrics) {
-            displayLyrics(data.message.body.lyrics.lyrics_body);
+        const response = await fetch('https://api.spotify.com/v1/me/player/currently-playing', {
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+
+        if (response.ok) {
+            const data = await response.json();
+            displaySongInfo(data);
         } else {
-            throw new Error('Lyrics not found');
+            console.error('Failed to fetch currently playing song:', response.status);
         }
     } catch (error) {
-        console.error('Error fetching lyrics:', error.message);
-        displayLyrics('Lyrics not found');
-    }
-}
-
-    const response = await fetch('https://api.spotify.com/v1/me/player/currently-playing', {
-        headers: {
-            'Authorization': `Bearer ${token}`
-        }
-    });
-
-    if (response.ok) {
-        const data = await response.json();
-        displaySongInfo(data);
-    } else {
-        console.error('Failed to fetch currently playing song');
+        console.error('Error fetching currently playing song:', error.message);
     }
 }
 
@@ -73,13 +63,16 @@ function displaySongInfo(data) {
 
 async function fetchLyrics(songName, artistName) {
     const url = `https://api.lyrics.ovh/v1/${encodeURIComponent(artistName)}/${encodeURIComponent(songName)}`;
-    const response = await fetch(url);
-
-    if (response.ok) {
-        const data = await response.json();
-        displayLyrics(data.lyrics);
-    } else {
-        console.error('Failed to fetch lyrics');
+    try {
+        const response = await fetch(url);
+        if (response.ok) {
+            const data = await response.json();
+            displayLyrics(data.lyrics);
+        } else {
+            throw new Error('Lyrics not found');
+        }
+    } catch (error) {
+        console.error('Error fetching lyrics:', error.message);
         displayLyrics('Lyrics not found');
     }
 }
@@ -144,5 +137,5 @@ function syncLyrics(lyricsLines) {
 }
 
 function getTimestamp(lyricLine) {
-    return Infinity;
+    return Infinity;  // Replace with actual logic to get timestamp from lyricLine
 }
