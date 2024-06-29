@@ -62,12 +62,39 @@ function displaySongInfo(data) {
 }
 
 async function fetchLyrics(songName, artistName) {
-    const url = `https://api.lyrics.ovh/v1/${encodeURIComponent(artistName)}/${encodeURIComponent(songName)}`;
     try {
-        const response = await fetch(url);
-        if (response.ok) {
-            const data = await response.json();
-            displayLyrics(data.lyrics);
+        const accessToken = 'bqJY8CQL2SUDPpw0sHRuuMV1UGNTlClmIr7OnqXbLdyfH-dcjv_lAAze_LvG9dv_';
+        const searchUrl = `https://api.genius.com/search?q=${encodeURIComponent(songName)} ${encodeURIComponent(artistName)}`;
+        
+        const searchResponse = await fetch(searchUrl, {
+            headers: {
+                'Authorization': `Bearer ${accessToken}`
+            }
+        });
+
+        if (!searchResponse.ok) {
+            throw new Error('Failed to search for lyrics');
+        }
+
+        const searchData = await searchResponse.json();
+        if (searchData.response.hits.length > 0) {
+            const songPath = searchData.response.hits[0].result.api_path;
+            const lyricsUrl = `https://api.genius.com${songPath}`;
+            
+            const lyricsResponse = await fetch(lyricsUrl, {
+                headers: {
+                    'Authorization': `Bearer ${accessToken}`
+                }
+            });
+
+            if (!lyricsResponse.ok) {
+                throw new Error('Failed to fetch lyrics');
+            }
+
+            const lyricsData = await lyricsResponse.json();
+            const lyrics = lyricsData.response.song.lyrics;
+
+            displayLyrics(lyrics);
         } else {
             throw new Error('Lyrics not found');
         }
@@ -81,7 +108,7 @@ function displayLyrics(lyrics) {
     const lyricsContainer = document.getElementById('lyrics-container');
     lyricsContainer.innerHTML = '';
 
-    if (lyrics) {
+    if (lyrics && lyrics !== 'Lyrics not found') {
         const lyricsLines = lyrics.split('\n');
         lyricsLines.forEach(line => {
             const p = document.createElement('p');
@@ -91,51 +118,8 @@ function displayLyrics(lyrics) {
 
         document.getElementById('lyrics').classList.remove('hidden');
 
-        syncLyrics(lyricsLines);
+        // Implement your syncing logic here
     } else {
         lyricsContainer.textContent = 'Lyrics not found';
     }
-}
-
-function syncLyrics(lyricsLines) {
-    const lyricsContainer = document.getElementById('lyrics-container');
-    let currentIndex = 0;
-
-    function updateLyrics() {
-        const token = localStorage.getItem('spotify_access_token');
-        if (!token) {
-            return;
-        }
-
-        fetch('https://api.spotify.com/v1/me/player', {
-            headers: {
-                'Authorization': `Bearer ${token}`
-            }
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data && data.item) {
-                const progressMs = data.progress_ms;
-                while (currentIndex < lyricsLines.length && getTimestamp(lyricsLines[currentIndex]) <= progressMs) {
-                    currentIndex++;
-                }
-
-                lyricsContainer.querySelectorAll('p').forEach((p, index) => {
-                    if (index === currentIndex) {
-                        p.classList.add('highlight');
-                    } else {
-                        p.classList.remove('highlight');
-                    }
-                });
-            }
-        });
-
-        setTimeout(updateLyrics, 1000);
-    }
-
-    updateLyrics();
-}
-
-function getTimestamp(lyricLine) {
-    return Infinity;  // Replace with actual logic to get timestamp from lyricLine
 }
