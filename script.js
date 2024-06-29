@@ -23,11 +23,24 @@ window.addEventListener('load', () => {
     }
 });
 
-async function getCurrentlyPlaying() {
-    const token = localStorage.getItem('spotify_access_token');
-    if (!token) {
-        return;
+async function fetchLyrics(songName, artistName) {
+    const url = `https://api.lyrics.ovh/v1/${encodeURIComponent(artistName)}/${encodeURIComponent(songName)}`;
+    console.log('Fetching lyrics from:', url);
+    
+    try {
+        const response = await fetch(url);
+        if (!response.ok) {
+            throw new Error('Failed to fetch lyrics');
+        }
+        const data = await response.json();
+        console.log('API Response:', data);
+        displayLyrics(data.lyrics);
+    } catch (error) {
+        console.error('Error fetching lyrics:', error.message);
+        displayLyrics('Lyrics not found');
     }
+}
+
 
     const response = await fetch('https://api.spotify.com/v1/me/player/currently-playing', {
         headers: {
