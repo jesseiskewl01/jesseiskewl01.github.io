@@ -78,7 +78,6 @@ function displayLyrics(lyrics) {
         lyricsContainer.appendChild(p);
     });
 
-    // Uncomment the following line to show the lyrics container
     document.getElementById('lyrics').classList.remove('hidden');
 
     syncLyrics(lyricsLines);
@@ -103,8 +102,6 @@ function syncLyrics(lyricsLines) {
         .then(data => {
             if (data && data.item) {
                 const progressMs = data.progress_ms;
-                // Find the current lyric based on progressMs
-                // Assuming lyricsLines are not timestamped; this will need to be adjusted if they are
                 while (currentIndex < lyricsLines.length && getTimestamp(lyricsLines[currentIndex]) <= progressMs) {
                     currentIndex++;
                 }
@@ -126,6 +123,5 @@ function syncLyrics(lyricsLines) {
 }
 
 function getTimestamp(lyricLine) {
-    // Placeholder function since lyrics from lyrics.ovh are not timestamped
     return Infinity;
 }
