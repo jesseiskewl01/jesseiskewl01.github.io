@@ -63,7 +63,7 @@ function displaySongInfo(data) {
 
 async function fetchLyrics(songName, artistName) {
     try {
-        const accessToken = 'bqJY8CQL2SUDPpw0sHRuuMV1UGNTlClmIr7OnqXbLdyfH-dcjv_lAAze_LvG9dv_';
+        const accessToken = '_DUPNacCt418SU4LntMk9Mi-BmB6JrNQzEmLZbqj_NK6f421Lt79urnwwDm_FNO8';
         const searchUrl = `https://api.genius.com/search?q=${encodeURIComponent(songName)} ${encodeURIComponent(artistName)}`;
         
         const searchResponse = await fetch(searchUrl, {
@@ -73,14 +73,14 @@ async function fetchLyrics(songName, artistName) {
         });
 
         if (!searchResponse.ok) {
-            throw new Error('Failed to search for lyrics');
+            throw new Error(`Failed to search for lyrics: ${searchResponse.status} ${searchResponse.statusText}`);
         }
 
         const searchData = await searchResponse.json();
         if (searchData.response.hits.length > 0) {
             const songPath = searchData.response.hits[0].result.api_path;
             const lyricsUrl = `https://api.genius.com${songPath}`;
-            
+
             const lyricsResponse = await fetch(lyricsUrl, {
                 headers: {
                     'Authorization': `Bearer ${accessToken}`
@@ -88,7 +88,7 @@ async function fetchLyrics(songName, artistName) {
             });
 
             if (!lyricsResponse.ok) {
-                throw new Error('Failed to fetch lyrics');
+                throw new Error(`Failed to fetch lyrics: ${lyricsResponse.status} ${lyricsResponse.statusText}`);
             }
 
             const lyricsData = await lyricsResponse.json();
