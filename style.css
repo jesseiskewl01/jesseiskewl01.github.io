@@ -1,0 +1,28 @@
+body {
+    background-color: #121212;
+    color: #FFFFFF;
+    font-family: Arial, sans-serif;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    margin: 0;
+}
+
+.hidden {
+    display: none;
+}
+
+#lyrics {
+    text-align: center;
+}
+
+#lyrics-container {
+    margin-top: 20px;
+    white-space: pre-wrap;
+}
+
+.highlight {
+    color: #1DB954;
+    font-weight: bold;
+}
