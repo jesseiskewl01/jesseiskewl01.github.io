@@ -1,5 +1,5 @@
 const clientId = 'cc68dd35236641bdbe8ab14888f6c883';
-const redirectUri = 'https://github.com/jesseiskewl01/jesseiskewl01.github.io';
+const redirectUri = 'https://jesseiskewl01.github.io';
 const scopes = 'user-read-playback-state user-read-currently-playing';
 
 document.getElementById('login-button').addEventListener('click', () => {
@@ -57,12 +57,75 @@ function displaySongInfo(data) {
 }
 
 async function fetchLyrics(songName, artistName) {
-    // Implement the fetch from lrclib or another lyrics API
-    // For now, just display dummy lyrics
-    displayLyrics(`Lyrics for ${songName} by ${artistName}`);
+    const response = await fetch(`https://api.lyrics.ovh/v1/${artistName}/${songName}`);
+    if (response.ok) {
+        const data = await response.json();
+        displayLyrics(data.lyrics);
+    } else {
+        console.error('Failed to fetch lyrics');
+        displayLyrics('Lyrics not found');
+    }
 }
 
 function displayLyrics(lyrics) {
     const lyricsContainer = document.getElementById('lyrics-container');
-    lyricsContainer.innerHTML = lyrics;
+    lyricsContainer.innerHTML = '';
+
+    const lyricsLines = lyrics.split('\n');
+    lyricsLines.forEach(line => {
+        const p = document.createElement('p');
+        p.textContent = line;
+        lyricsContainer.appendChild(p);
+    });
+
+    // Uncomment the following line to show the lyrics container
+    document.getElementById('lyrics').classList.remove('hidden');
+
+    syncLyrics(lyricsLines);
+}
+
+function syncLyrics(lyricsLines) {
+    const lyricsContainer = document.getElementById('lyrics-container');
+    let currentIndex = 0;
+
+    function updateLyrics() {
+        const token = localStorage.getItem('spotify_access_token');
+        if (!token) {
+            return;
+        }
+
+        fetch('https://api.spotify.com/v1/me/player', {
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data && data.item) {
+                const progressMs = data.progress_ms;
+                // Find the current lyric based on progressMs
+                // Assuming lyricsLines are not timestamped; this will need to be adjusted if they are
+                while (currentIndex < lyricsLines.length && getTimestamp(lyricsLines[currentIndex]) <= progressMs) {
+                    currentIndex++;
+                }
+
+                lyricsContainer.querySelectorAll('p').forEach((p, index) => {
+                    if (index === currentIndex) {
+                        p.classList.add('highlight');
+                    } else {
+                        p.classList.remove('highlight');
+                    }
+                });
+            }
+        });
+
+        setTimeout(updateLyrics, 1000);
+    }
+
+    updateLyrics();
+}
+
+function getTimestamp(lyricLine) {
+    // Placeholder function since lyrics from lyrics.ovh are not timestamped
+    return Infinity;
 }
