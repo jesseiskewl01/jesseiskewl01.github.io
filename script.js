@@ -57,7 +57,9 @@ function displaySongInfo(data) {
 }
 
 async function fetchLyrics(songName, artistName) {
-    const response = await fetch(`https://api.lyrics.ovh/v1/${artistName}/${songName}`);
+    const url = `https://api.lyrics.ovh/v1/${encodeURIComponent(artistName)}/${encodeURIComponent(songName)}`;
+    const response = await fetch(url);
+
     if (response.ok) {
         const data = await response.json();
         displayLyrics(data.lyrics);
@@ -71,16 +73,20 @@ function displayLyrics(lyrics) {
     const lyricsContainer = document.getElementById('lyrics-container');
     lyricsContainer.innerHTML = '';
 
-    const lyricsLines = lyrics.split('\n');
-    lyricsLines.forEach(line => {
-        const p = document.createElement('p');
-        p.textContent = line;
-        lyricsContainer.appendChild(p);
-    });
+    if (lyrics) {
+        const lyricsLines = lyrics.split('\n');
+        lyricsLines.forEach(line => {
+            const p = document.createElement('p');
+            p.textContent = line;
+            lyricsContainer.appendChild(p);
+        });
 
-    document.getElementById('lyrics').classList.remove('hidden');
+        document.getElementById('lyrics').classList.remove('hidden');
 
-    syncLyrics(lyricsLines);
+        syncLyrics(lyricsLines);
+    } else {
+        lyricsContainer.textContent = 'Lyrics not found';
+    }
 }
 
 function syncLyrics(lyricsLines) {
